@@ -79,9 +79,8 @@ colnames(one_data_set) <- cols
 tidy_data_set <-aggregate(. ~subjectId + activityId, one_data_set, mean)
 tidy_data_set <-tidy_data_set[order(tidy_data_set$subjectId,
                                     tidy_data_set$activityId),]
+dim(one_data_set)
+dim(tidy_data_set)
 write.table(tidy_data_set, file = "./tidydata.txt",row.name=FALSE)
-
-library(knitr)
-knit2html("./codebook.Rmd")
 
 
