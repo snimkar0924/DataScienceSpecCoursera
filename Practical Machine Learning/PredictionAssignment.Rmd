@@ -1,0 +1,185 @@
+---
+title: "Prediction Assignment"
+author: "Sonali Nimkar"
+date: "May 16, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache=TRUE)
+```
+
+#Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
+
+In this project, we will use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict the manner in which they did the exercise.
+
+#Data Preprocessing
+
+```{r echo=FALSE, message=FALSE, results='hide', warning=FALSE}
+library(caret)
+library(ranger)
+library(corrplot)
+library(rpart)
+library(rpart.plot)
+
+```
+Note: `caret`, `ranger`, `corrplot`, `rpart` and `rpart.plot` packages have been loaded silently.
+
+##Download the Data
+```{r}
+trainUrl <- 
+  "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- 
+  "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+trainFile <- "./data/pml-training.csv"
+testFile  <- "./data/pml-testing.csv"
+if (!file.exists("./data")) 
+{
+  dir.create("./data")
+}
+if (!file.exists(trainFile)) 
+{
+  download.file(trainUrl, destfile=trainFile, method="curl")
+}
+if (!file.exists(testFile)) 
+{
+  download.file(testUrl, destfile=testFile, method="curl")
+}
+```
+
+##Read the Data
+```{r}
+trainDat <- read.csv("./data/pml-training.csv")
+testDat <- read.csv("./data/pml-testing.csv")
+dim(trainDat)
+dim(testDat)
+
+```
+
+Of the 160 variables in the dataset - the "classe" variable is the one to be predicted.
+
+##Clean the data
+In this step, we will clean the data and get rid of observations with missing values as well as some meaningless variables.
+
+```{r}
+sum(complete.cases(trainDat))
+
+```
+First, we remove columns that contain NA missing values.
+
+```{r}
+trainDat <- trainDat[, colSums(is.na(trainDat)) == 0]
+testDat <- testDat[, colSums(is.na(testDat)) == 0]
+dim(trainDat)
+dim(testDat)
+
+```
+
+Next, we get rid of some columns that do not contribute much to the accelerometer measurements.
+
+```{r}
+
+classe <- trainDat$classe
+trainRemove <- grepl("^X|timestamp|window", names(trainDat))
+trainDat <- trainDat[, !trainRemove]
+trainDat <- trainDat[, sapply(trainDat, is.numeric)]
+trainDat$classe <- classe
+testRemove <- grepl("^X|timestamp|window", names(testDat))
+testDat <- testDat[, !testRemove]
+testDat <- testDat[, sapply(testDat, is.numeric)]
+
+dim(trainDat)
+dim(testDat)
+colnames(trainDat)
+colnames(testDat)
+```
+
+Now, the cleaned training data set contains 19622 observations and 53 variables, while the testing data set contains 20 observations and 53 variables. 
+
+##Slicing the data
+Partitioning the data into training and validation sets to build and test the model.
+
+```{r}
+set.seed(400703)
+inTrain <- createDataPartition(trainDat$classe, p=0.70, list=F)
+trainDat <- trainDat[inTrain, ]
+valdnDat <- trainDat[-inTrain, ]
+
+dim(trainDat)
+dim(valdnDat)
+dim(testDat)
+```
+
+#Data Modeling
+
+##Random Forest
+We now model the data using the Random Forest modeling technique. However, given 52 explanatory variables (and about 13,000 training observations) - creating the RF model using the `train` method in `caret` is extremely time consuming (on the author's computer). So we look for alternatives... 
+And use package `ranger` for faster processing of the random forest model.
+
+```{r}
+modelRF <-  ranger(classe ~ ., data = trainDat, write.forest = TRUE)
+pred <- predict(modelRF, valdnDat)
+t <- table(predictions(pred), valdnDat$classe)
+t
+
+offset <- 5
+accMat <- c("A"=t[1]/sum(t[seq(from=1, to=25, by=offset)]),
+            "B"=t[7]/sum(t[seq(from=2, to=25, by=offset)]),
+            "C"=t[13]/sum(t[seq(from=3, to=25, by=offset)]),
+            "D"=t[19]/sum(t[seq(from=4, to=25, by=offset)]),
+            "E"=t[25]/sum(t[seq(from=5, to=25, by=offset)]))
+round(accMat, 4)
+#woah!!!
+```
+
+Now using the model on the 20 cases in the testing set ...
+
+```{r}
+
+pred1 <- predict(modelRF, testDat[,1:52])
+testDat$classe <- predictions(pred1)
+#printing the 20 predictions & a few columns...
+testDat[,c(1:4, 54)]
+
+```
+
+#Appendix
+### Correlation Matrix
+
+```{r}
+corrPlot <- cor(trainDat[, -length(names(trainDat))])
+#anonimize labels for better viewing
+attributes(corrPlot)$dimnames[[1]] <- seq(1:(ncol(trainDat)-1))
+attributes(corrPlot)$dimnames[[2]] <- seq(1:(ncol(trainDat)-1))
+corrplot(corrPlot, method="color", tl.cex=0.6)
+
+```
+
+### Tree Plot
+
+```{r}
+treeModel <- rpart(classe ~ ., data=trainDat, method="class")
+prp(treeModel) # fast plot
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
