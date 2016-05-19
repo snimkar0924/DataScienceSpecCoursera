@@ -68,6 +68,7 @@ img {
 </div>
 
 
+<p>Also available at: <a href="http://rpubs.com/snimkar0924/182113" class="uri">http://rpubs.com/snimkar0924/182113</a></p>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
 <p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.</p>
@@ -193,33 +194,70 @@ dim(trainDat)</code></pre>
 <h1>Data Modeling</h1>
 <div id="random-forest" class="section level2">
 <h2>Random Forest</h2>
-<p>We now model the data using the Random Forest modeling technique. However, given 52 explanatory variables (and about 13,000 training observations) - creating the RF model using the <code>train</code> method in <code>caret</code> is extremely time consuming (on the author’s computer). So we look for alternatives… And use package <code>ranger</code> for faster processing of the random forest model.</p>
-<pre class="r"><code>modelRF &lt;-  ranger(classe ~ ., data = trainDat, write.forest = TRUE)
-pred &lt;- predict(modelRF, valdnDat)
-t &lt;- table(predictions(pred), valdnDat$classe)
-t</code></pre>
-<pre><code>##    
-##        A    B    C    D    E
-##   A 1157    0    0    0    0
-##   B    0  787    0    0    0
-##   C    0    0  742    0    0
-##   D    0    0    0  672    0
-##   E    0    0    0    0  761</code></pre>
-<pre class="r"><code>offset &lt;- 5
-accMat &lt;- c(&quot;A&quot;=t[1]/sum(t[seq(from=1, to=25, by=offset)]),
-            &quot;B&quot;=t[7]/sum(t[seq(from=2, to=25, by=offset)]),
-            &quot;C&quot;=t[13]/sum(t[seq(from=3, to=25, by=offset)]),
-            &quot;D&quot;=t[19]/sum(t[seq(from=4, to=25, by=offset)]),
-            &quot;E&quot;=t[25]/sum(t[seq(from=5, to=25, by=offset)]))
-round(accMat, 4)</code></pre>
-<pre><code>## A B C D E 
-## 1 1 1 1 1</code></pre>
-<pre class="r"><code>#woah!!!</code></pre>
-<p>Now using the model on the 20 cases in the testing set …</p>
-<pre class="r"><code>pred1 &lt;- predict(modelRF, testDat[,1:52])
-testDat$classe &lt;- predictions(pred1)
-#printing the 20 predictions &amp; a few columns...
-testDat[,c(1:4, 54)]</code></pre>
+<p>We now model the data using the Random Forest modeling technique.</p>
+<pre class="r"><code>controlRF &lt;- trainControl(method=&quot;cv&quot;, 5)
+modelRF1 &lt;- train(classe ~ ., data=trainDat, method=&quot;rf&quot;, 
+                  trControl=controlRF, ntree=25)
+modelRF1</code></pre>
+<pre><code>## Random Forest 
+## 
+## 13737 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (5 fold) 
+## Summary of sample sizes: 10991, 10988, 10990, 10988, 10991 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa    
+##    2    0.9854402  0.9815800
+##   27    0.9886439  0.9856344
+##   52    0.9823102  0.9776224
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was mtry = 27.</code></pre>
+<pre class="r"><code>pred1 &lt;- predict(modelRF1, valdnDat)
+confusionMatrix(valdnDat$classe, pred1)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1157    0    0    0    0
+##          B    0  787    0    0    0
+##          C    0    0  742    0    0
+##          D    0    0    0  672    0
+##          E    0    0    0    0  761
+## 
+## Overall Statistics
+##                                      
+##                Accuracy : 1          
+##                  95% CI : (0.9991, 1)
+##     No Information Rate : 0.2809     
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16  
+##                                      
+##                   Kappa : 1          
+##  Mcnemar's Test P-Value : NA         
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            1.0000   1.0000   1.0000   1.0000   1.0000
+## Specificity            1.0000   1.0000   1.0000   1.0000   1.0000
+## Pos Pred Value         1.0000   1.0000   1.0000   1.0000   1.0000
+## Neg Pred Value         1.0000   1.0000   1.0000   1.0000   1.0000
+## Prevalence             0.2809   0.1911   0.1801   0.1631   0.1848
+## Detection Rate         0.2809   0.1911   0.1801   0.1631   0.1848
+## Detection Prevalence   0.2809   0.1911   0.1801   0.1631   0.1848
+## Balanced Accuracy      1.0000   1.0000   1.0000   1.0000   1.0000</code></pre>
+<pre class="r"><code>acc1 &lt;- postResample(pred1, valdnDat$classe)
+acc1</code></pre>
+<pre><code>## Accuracy    Kappa 
+##        1        1</code></pre>
+<p>Prediction on the 20 test cases…</p>
+<pre class="r"><code>#generating &quot;classe&quot;
+result1 &lt;- predict(modelRF1, testDat[, -c(53:54)])
+cbind.data.frame(testDat[,1:4], &quot;classe&quot;=result1)</code></pre>
 <pre><code>##    roll_belt pitch_belt yaw_belt total_accel_belt classe
 ## 1     123.00      27.00    -4.75               20      B
 ## 2       1.02       4.87   -88.90                4      A
@@ -241,10 +279,70 @@ testDat[,c(1:4, 54)]</code></pre>
 ## 18      0.92       5.31   -93.10                3      B
 ## 19    123.00      26.70    -2.68               19      B
 ## 20      1.40       3.20   -88.70                3      B</code></pre>
+<p>Super!</p>
+<p>However, given 52 explanatory variables (and about 13,000 training observations) - creating the RF model using the <code>train</code> method in <code>caret</code> has been extremely time consuming (on the author’s computer). So we look for alternatives… And use package <code>ranger</code> for faster processing of the random forest model.</p>
+<pre class="r"><code>modelRF2 &lt;-  ranger(classe ~ ., data = trainDat, write.forest = TRUE)
+pred2 &lt;- predict(modelRF2, valdnDat)
+t2 &lt;- table(predictions(pred2), valdnDat$classe)
+t2</code></pre>
+<pre><code>##    
+##        A    B    C    D    E
+##   A 1157    0    0    0    0
+##   B    0  787    0    0    0
+##   C    0    0  742    0    0
+##   D    0    0    0  672    0
+##   E    0    0    0    0  761</code></pre>
+<pre class="r"><code>offset &lt;- 5
+acc2 &lt;- c(&quot;A&quot;=t2[1]/sum(t2[seq(from=1, to=25, by=offset)]),
+          &quot;B&quot;=t2[7]/sum(t2[seq(from=2, to=25, by=offset)]),
+          &quot;C&quot;=t2[13]/sum(t2[seq(from=3, to=25, by=offset)]),
+          &quot;D&quot;=t2[19]/sum(t2[seq(from=4, to=25, by=offset)]),
+          &quot;E&quot;=t2[25]/sum(t2[seq(from=5, to=25, by=offset)]))
+round(acc2, 4)</code></pre>
+<pre><code>## A B C D E 
+## 1 1 1 1 1</code></pre>
+<p>Woah! Super too!</p>
+<p>Now using the model on the 20 cases in the testing set …</p>
+<pre class="r"><code>pred2 &lt;- predict(modelRF2, testDat[,1:52])
+result2 &lt;- predictions(pred2)
+#printing the 20 predictions &amp; a few columns...
+cbind.data.frame(testDat[,1:4], &quot;classe&quot;= result2)</code></pre>
+<pre><code>##    roll_belt pitch_belt yaw_belt total_accel_belt classe
+## 1     123.00      27.00    -4.75               20      B
+## 2       1.02       4.87   -88.90                4      A
+## 3       0.87       1.82   -88.50                5      B
+## 4     125.00     -41.60   162.00               17      A
+## 5       1.35       3.33   -88.60                3      A
+## 6      -5.92       1.59   -87.70                4      E
+## 7       1.20       4.44   -87.30                4      D
+## 8       0.43       4.15   -88.50                4      B
+## 9       0.93       6.72   -93.70                4      A
+## 10    114.00      22.40   -13.10               18      A
+## 11      0.92       5.94   -92.70                3      B
+## 12      1.01       4.96   -87.80                5      C
+## 13      0.54       2.45   -88.60                3      B
+## 14      0.45       5.02   -87.90                5      A
+## 15      5.34      -3.09   -80.30                4      E
+## 16      1.65       3.47   -87.00                2      E
+## 17    129.00      27.80     1.84               21      A
+## 18      0.92       5.31   -93.10                3      B
+## 19    123.00      26.70    -2.68               19      B
+## 20      1.40       3.20   -88.70                3      B</code></pre>
+<p>Comparison between predictions from the two models.</p>
+<pre class="r"><code>table(&quot;model1&quot;=result1, &quot;model2&quot;=result2)</code></pre>
+<pre><code>##       model2
+## model1 A B C D E
+##      A 7 0 0 0 0
+##      B 0 8 0 0 0
+##      C 0 0 1 0 0
+##      D 0 0 0 1 0
+##      E 0 0 0 0 3</code></pre>
+<p>hmm.</p>
 </div>
 </div>
 <div id="appendix" class="section level1">
 <h1>Appendix</h1>
+<p>Exploring the data.</p>
 <div id="correlation-matrix" class="section level3">
 <h3>Correlation Matrix</h3>
 <pre class="r"><code>corrPlot &lt;- cor(trainDat[, -length(names(trainDat))])

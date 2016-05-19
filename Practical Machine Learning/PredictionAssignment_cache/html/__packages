@@ -6,3 +6,4 @@ ranger
 corrplot
 rpart
 rpart.plot
+randomForest

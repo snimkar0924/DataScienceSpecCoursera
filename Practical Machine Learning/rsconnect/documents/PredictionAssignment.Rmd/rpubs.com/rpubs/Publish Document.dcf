@@ -1,0 +1,7 @@
+name: Publish Document
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/182113/ad292e08a4424056a60082e244e1526b
+bundleId: https://api.rpubs.com/api/v1/document/182113/ad292e08a4424056a60082e244e1526b
+url: http://rpubs.com/snimkar0924/182113
+when: 1463639226.86271

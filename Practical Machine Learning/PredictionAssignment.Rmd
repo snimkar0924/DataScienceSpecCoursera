@@ -9,6 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, cache=TRUE)
 ```
 
+Also available at: http://rpubs.com/snimkar0924/182113
+
 #Introduction
 
 Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
@@ -115,37 +117,74 @@ dim(testDat)
 #Data Modeling
 
 ##Random Forest
-We now model the data using the Random Forest modeling technique. However, given 52 explanatory variables (and about 13,000 training observations) - creating the RF model using the `train` method in `caret` is extremely time consuming (on the author's computer). So we look for alternatives... 
+We now model the data using the Random Forest modeling technique. 
+
+```{r}
+controlRF <- trainControl(method="cv", 5)
+modelRF1 <- train(classe ~ ., data=trainDat, method="rf", 
+                  trControl=controlRF, ntree=25)
+modelRF1
+
+pred1 <- predict(modelRF1, valdnDat)
+confusionMatrix(valdnDat$classe, pred1)
+
+acc1 <- postResample(pred1, valdnDat$classe)
+acc1
+
+```
+
+Prediction on the 20 test cases...
+```{r}
+#generating "classe"
+result1 <- predict(modelRF1, testDat[, -c(53:54)])
+cbind.data.frame(testDat[,1:4], "classe"=result1)
+
+```
+Super!
+
+However, given 52 explanatory variables (and about 13,000 training observations) - creating the RF model using the `train` method in `caret` has been extremely time consuming (on the author's computer). So we look for alternatives... 
 And use package `ranger` for faster processing of the random forest model.
 
 ```{r}
-modelRF <-  ranger(classe ~ ., data = trainDat, write.forest = TRUE)
-pred <- predict(modelRF, valdnDat)
-t <- table(predictions(pred), valdnDat$classe)
-t
+modelRF2 <-  ranger(classe ~ ., data = trainDat, write.forest = TRUE)
+pred2 <- predict(modelRF2, valdnDat)
+t2 <- table(predictions(pred2), valdnDat$classe)
+t2
 
 offset <- 5
-accMat <- c("A"=t[1]/sum(t[seq(from=1, to=25, by=offset)]),
-            "B"=t[7]/sum(t[seq(from=2, to=25, by=offset)]),
-            "C"=t[13]/sum(t[seq(from=3, to=25, by=offset)]),
-            "D"=t[19]/sum(t[seq(from=4, to=25, by=offset)]),
-            "E"=t[25]/sum(t[seq(from=5, to=25, by=offset)]))
-round(accMat, 4)
-#woah!!!
+acc2 <- c("A"=t2[1]/sum(t2[seq(from=1, to=25, by=offset)]),
+          "B"=t2[7]/sum(t2[seq(from=2, to=25, by=offset)]),
+          "C"=t2[13]/sum(t2[seq(from=3, to=25, by=offset)]),
+          "D"=t2[19]/sum(t2[seq(from=4, to=25, by=offset)]),
+          "E"=t2[25]/sum(t2[seq(from=5, to=25, by=offset)]))
+round(acc2, 4)
+
 ```
+Woah! Super too!
+
 
 Now using the model on the 20 cases in the testing set ...
 
 ```{r}
 
-pred1 <- predict(modelRF, testDat[,1:52])
-testDat$classe <- predictions(pred1)
+pred2 <- predict(modelRF2, testDat[,1:52])
+result2 <- predictions(pred2)
 #printing the 20 predictions & a few columns...
-testDat[,c(1:4, 54)]
+cbind.data.frame(testDat[,1:4], "classe"= result2)
 
 ```
 
+Comparison between predictions from the two models.
+
+```{r}
+table("model1"=result1, "model2"=result2)
+
+```
+hmm.
+
 #Appendix
+Exploring the data.
+
 ### Correlation Matrix
 
 ```{r}

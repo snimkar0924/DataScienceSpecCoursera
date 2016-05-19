@@ -65,14 +65,13 @@ acc2 <- c("A"=t2[1]/sum(t2[seq(from=1, to=25, by=offset)]),
 round(acc2, 2)
 #woah!!!
 
-pred1 <- predict(modelRF2, testDat[,1:52])
-testDat$classe <- predictions(pred1)
+pred2 <- predict(modelRF2, testDat[,1:52])
+testDat$classe <- predictions(pred2)
 #printing the first 10 predictions
 head(testDat[,c(1:4, 54)], n=10)
 testDat[,c(1:4, 54)]
 
-
-
+## one more technique
 controlRf <- trainControl(method="cv", 5)
 modelRf <- train(classe ~ ., data=trainDat, method="rf", 
                  trControl=controlRf, ntree=25)
