@@ -1,0 +1,23 @@
+---
+title: "Readme"
+author: "Sonali A. Nimkar"
+date: "May 16, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# About this work...
+## USA - State Statistics
+
+This presentation is a part of the final course project for the Data Science Specialization (JHU) on Coursera, specifically for the course "Developing Data Products".
+
+In this project, we use a data set provided in the base R packages - "state" and its related data sets, mainly, "state.x77", "state.abb" and "state.region". 
+Given these data on some major state statistics such as area, population, income, literacy, crime etc., we look at the state-wise trend for each statistic across the 50 American states.
+
+This is a shiny application with the ui.R and server.R loaded into this repository.
+
+
+
