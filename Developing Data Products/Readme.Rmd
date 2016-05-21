@@ -1,0 +1,12 @@
+---
+title: "Readme"
+author: "Sonali A. Nimkar"
+date: "May 16, 2016"
+output: html_document
+---
+
+#Developing Data Products
+
+This repository contains material created as a part of the final course in the Data Science Specialization offered by the JHU on Coursera.
+
+
