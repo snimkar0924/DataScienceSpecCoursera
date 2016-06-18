@@ -5,7 +5,7 @@
 # This app displays state-wise statistics (from a pre-configured list) 
 # for individual states in the USA
 
-# ui.R file for the shiny app
+# ui.R file for the shiny app - States
 
 library(markdown)
 
