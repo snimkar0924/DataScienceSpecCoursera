@@ -1,6 +1,6 @@
 # Coursera - Developing Data Products- Course Project
 
-# server.R file for the shiny app
+# server.R file for the shiny app - States
 
 library(shiny)
 library(ggplot2)
